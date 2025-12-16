@@ -119,7 +119,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import NavBar from '../components/NavBar.vue'
-import { searchDictionary } from '../utils/data.js'
+import { searchDictionaryLazy, addDictionaryHistory, getDictionaryHistory, clearDictionaryHistory as clearDictHistory } from '../utils/dictionaryLoader'
 
 const searchKeyword = ref('')
 const searchResult = ref(null)
@@ -140,16 +140,16 @@ const handleInput = () => {
  * 执行词典查询
  * 查询成功后自动添加到历史记录
  */
-const performSearch = () => {
+const performSearch = async () => {
   if (!searchKeyword.value.trim()) return
   
   hasSearched.value = true  // 标记已执行过搜索
-  const result = searchDictionary(searchKeyword.value.trim())
+  const result = await searchDictionaryLazy(searchKeyword.value.trim())
   searchResult.value = result
   
   // 如果查询成功，添加到历史记录
   if (result) {
-    addToHistory(searchKeyword.value.trim())
+    history.value = await addDictionaryHistory(searchKeyword.value.trim())
   }
 }
 
@@ -157,9 +157,9 @@ const performSearch = () => {
  * 点击历史记录项或推荐词条时执行搜索
  * @param {string} word - 要查询的词
  */
-const searchWord = (word) => {
+const searchWord = async (word) => {
   searchKeyword.value = word
-  performSearch()
+  await performSearch()
 }
 
 /**
@@ -167,42 +167,19 @@ const searchWord = (word) => {
  * 历史记录保存在localStorage中，最多保留10条
  * @param {string} word - 查询的词
  */
-const addToHistory = (word) => {
-  // 避免重复：如果已存在，先移除
-  const index = history.value.indexOf(word)
-  if (index > -1) {
-    history.value.splice(index, 1)
-  }
-  
-  // 添加到数组开头（最新的在前面）
-  history.value.unshift(word)
-  
-  // 只保留最近10条记录
-  if (history.value.length > 10) {
-    history.value.pop()
-  }
-  
-  // 保存到localStorage
-  localStorage.setItem('dictionaryHistory', JSON.stringify(history.value))
-}
-
 /**
  * 清空查询历史记录
  * 需要用户确认后执行
  */
-const clearHistory = () => {
+const clearHistory = async () => {
   if (confirm('确定要清空查询历史吗？')) {
+    await clearDictHistory()
     history.value = []
-    localStorage.setItem('dictionaryHistory', JSON.stringify([]))
   }
 }
 
-onMounted(() => {
-  // 从localStorage加载历史记录
-  const savedHistory = localStorage.getItem('dictionaryHistory')
-  if (savedHistory) {
-    history.value = JSON.parse(savedHistory)
-  }
+onMounted(async () => {
+  history.value = await getDictionaryHistory()
 })
 </script>
 

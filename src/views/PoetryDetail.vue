@@ -77,7 +77,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { getPoemById, getAllPoems } from '../utils/data.js'
+import { getPoemByIdLazy, loadIndex } from '../utils/dataLoader'
 
 const route = useRoute()
 const router = useRouter()
@@ -85,10 +85,8 @@ const poem = ref(null)
 const showAppreciation = ref(true)
 const isFavorite = ref(false)
 
-const recommendations = computed(() => {
-  const all = getAllPoems()
-  return all.filter(p => p.id !== poem.value?.id).slice(0, 4)
-})
+const recommendations = computed(() => recommendList.value)
+const recommendList = ref([])
 
 /**
  * 切换赏析区域的显示/隐藏状态
@@ -162,19 +160,30 @@ const goToPoem = (id) => {
   router.push(`/poetry/${id}`)
 }
 
-onMounted(() => {
+onMounted(async () => {
   const id = route.params.id
-  poem.value = getPoemById(id)
-  
+  poem.value = await getPoemByIdLazy(id)
+
   if (!poem.value) {
     router.push('/poetry')
     return
   }
-  
+
   // 检查是否已收藏
   const favorites = JSON.parse(localStorage.getItem('favorites') || '[]')
   isFavorite.value = favorites.includes(id)
-  
+
+  // 相关推荐：取索引前几条（过滤当前）
+  const index = await loadIndex()
+  recommendList.value = index
+    .filter(item => item.id !== id)
+    .slice(0, 4)
+    .map(item => ({
+      id: item.id,
+      title: item.title,
+      author: item.author,
+    }))
+
   // 记录访问历史
   recordHistory()
 })

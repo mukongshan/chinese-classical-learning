@@ -79,45 +79,41 @@
 <script setup>
 /**
  * 首页组件 Home.vue
- * 
+ *
  * 功能：
- * 1. 展示顶层分类导航（唐诗、宋词、元曲、先秦散文）
- * 2. 提供全局搜索功能（实时显示搜索结果）
- * 3. 展示热门诗词推荐卡片
- * 4. 底部品牌标语展示
- * 
- * 布局：左-中-右三分栏布局
- * - 左侧：分类导航面板
- * - 中间：搜索框和实时搜索结果
- * - 右侧：热门推荐卡片
+ * 1. 展示顶层分类导航（唐诗、宋词等）
+ * 2. 全局搜索（懒加载真实数据）
+ * 3. 热门推荐（索引前几条）
  */
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { categories, getPopularPoems, searchPoems } from '../utils/data.js'
+import { getPopularPoemsLazy, searchPoemsLazy, loadIndex } from '../utils/dataLoader'
+import { categories } from '../utils/data.js'
 
-// 路由实例，用于页面跳转
 const router = useRouter()
 
-// 响应式数据
-const searchKeyword = ref('')        // 搜索关键词
-const isFocused = ref(false)         // 搜索框是否聚焦（可用于UI反馈）
-const popularPoems = ref([])         // 热门诗词列表
+const searchKeyword = ref('')
+const isFocused = ref(false)
+const popularPoems = ref([])
+const searchResults = ref([])
+const loadingSearch = ref(false)
 
-/**
- * 计算属性：实时搜索结果
- * 当搜索关键词变化时，自动搜索并返回前5条结果
- */
-const searchResults = computed(() => {
-  if (!searchKeyword.value) return []
-  return searchPoems(searchKeyword.value).slice(0, 5)
+watch(searchKeyword, async (val) => {
+  if (!val) {
+    searchResults.value = []
+    return
+  }
+  loadingSearch.value = true
+  try {
+    const list = await searchPoemsLazy(val)
+    searchResults.value = list.slice(0, 5)
+  } finally {
+    loadingSearch.value = false
+  }
 })
 
-/**
- * 处理搜索操作
- * 跳转到诗词库页面，并携带搜索关键词作为查询参数
- */
 const handleSearch = () => {
   if (searchKeyword.value.trim()) {
     router.push({
@@ -127,10 +123,6 @@ const handleSearch = () => {
   }
 }
 
-/**
- * 跳转到指定分类的诗词列表
- * @param {string} categoryId - 分类ID
- */
 const goToCategory = (categoryId) => {
   router.push({
     path: '/poetry',
@@ -138,20 +130,14 @@ const goToCategory = (categoryId) => {
   })
 }
 
-/**
- * 跳转到指定诗词的详情页
- * @param {string} id - 诗词ID
- */
 const goToPoem = (id) => {
   router.push(`/poetry/${id}`)
 }
 
-/**
- * 组件挂载时执行
- * 加载热门诗词数据
- */
-onMounted(() => {
-  popularPoems.value = getPopularPoems(4)
+onMounted(async () => {
+  // 预加载索引，加快后续搜索
+  loadIndex().catch(() => {})
+  popularPoems.value = await getPopularPoemsLazy(4)
 })
 </script>
 

@@ -60,53 +60,72 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { categories, getAllPoems, searchPoems } from '../utils/data.js'
+import { categories } from '../utils/data.js'
+import { loadIndex, getPoemsByCategoryLazy, searchPoemsLazy, getPoemByIdLazy } from '../utils/dataLoader'
 
 const route = useRoute()
 const router = useRouter()
+
 const searchKeyword = ref(route.query.search || '')
 const activeCategory = ref(route.query.category || 'all')
-const allPoems = ref([])
+const allIndex = ref([])
+const displayedPoems = ref([])
+const loading = ref(false)
 
-const displayedPoems = computed(() => {
-  let poems = allPoems.value
-
-  // 搜索过滤
-  if (searchKeyword.value.trim()) {
-    poems = searchPoems(searchKeyword.value)
-  }
-
-  // 分类过滤（这里简化处理，实际可以根据分类筛选）
-  if (activeCategory.value !== 'all') {
-    // 可以根据实际分类逻辑筛选
-  }
-
-  return poems
-})
-
-const performSearch = () => {
-  // 搜索逻辑已在computed中处理
+const loadDetails = async (metas, limit = 50) => {
+  // 为列表页取正文前几句，便于预览
+  const slice = metas.slice(0, limit)
+  const results = await Promise.all(slice.map(async meta => {
+    const poem = await getPoemByIdLazy(meta.id)
+    return poem || {
+      id: meta.id,
+      title: meta.title,
+      author: meta.author,
+      dynasty: meta.dynasty,
+      content: [],
+    }
+  }))
+  return results
 }
 
-const filterByCategory = (categoryId) => {
+const performSearch = async () => {
+  loading.value = true
+  try {
+    if (searchKeyword.value.trim()) {
+      displayedPoems.value = await searchPoemsLazy(searchKeyword.value)
+    } else if (activeCategory.value && activeCategory.value !== 'all') {
+      const metas = await getPoemsByCategoryLazy(activeCategory.value)
+      displayedPoems.value = await loadDetails(metas)
+    } else {
+      // 默认展示索引前 50 条
+      displayedPoems.value = await loadDetails(allIndex.value)
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const filterByCategory = async (categoryId) => {
   activeCategory.value = categoryId
+  await performSearch()
 }
 
 const goToDetail = (id) => {
   router.push(`/poetry/${id}`)
 }
 
-onMounted(() => {
-  allPoems.value = getAllPoems()
-  if (route.query.search) {
-    searchKeyword.value = route.query.search
-  }
-  if (route.query.category) {
-    activeCategory.value = route.query.category
-  }
+watch(() => route.query.search, val => {
+  if (val) searchKeyword.value = val
+})
+
+watch(searchKeyword, () => performSearch())
+
+onMounted(async () => {
+  allIndex.value = await loadIndex()
+  await performSearch()
 })
 </script>
 

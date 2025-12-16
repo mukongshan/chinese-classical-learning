@@ -214,7 +214,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { getPoemById, getAllPoems } from '../utils/data.js'
+import { getPoemByIdLazy } from '../utils/dataLoader'
 
 const router = useRouter()
 
@@ -332,18 +332,18 @@ const formatTime = (timeStr) => {
 
 const loadFavorites = () => {
   const favIds = JSON.parse(localStorage.getItem('favorites') || '[]')
-  favorites.value = favIds.map(id => {
-    const poem = getPoemById(id)
+  favorites.value = []
+  Promise.all(favIds.map(async (id) => {
+    const poem = await getPoemByIdLazy(id)
     if (poem) {
-      return {
+      favorites.value.push({
         id: poem.id,
         title: poem.title,
         author: poem.author,
-        preview: poem.content[0] || ''
-      }
+        preview: poem.content?.[0] || ''
+      })
     }
-    return null
-  }).filter(Boolean)
+  }))
 }
 
 onMounted(() => {
