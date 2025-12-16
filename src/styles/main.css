@@ -1,0 +1,232 @@
+/**
+ * 全局样式文件 main.css
+ * 
+ * 设计风格：新中式水墨风格
+ * - 主色调：深绿色（#2E463B），传递书卷气和古典雅致
+ * - 背景色：米白色（#FAF9F6），营造留白意境
+ * - 字体：宋体，保证辨识度与古韵
+ * - 背景：淡墨晕染纹理，低透明度避免喧宾夺主
+ */
+
+/* 全局重置样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/**
+ * CSS变量定义
+ * 使用CSS变量便于统一管理和主题切换
+ */
+:root {
+  /* 色彩体系 - 新中式水墨风格配色 */
+  --primary-color: #2E463B; /* 深绿（墨绿），主色调 */
+  --bg-color: #FAF9F6;      /* 米白背景，营造留白意境 */
+  --text-color: #333333;    /* 深灰文字，增强层次 */
+  --light-gray: #F5F5F5;    /* 浅灰色，用于卡片背景 */
+  --medium-gray: #EEEEEE;   /* 中灰色，用于分割线 */
+  --white: #FFFFFF;         /* 白色，用于重要区块 */
+  --border-radius: 10px;    /* 统一圆角半径 */
+  
+  /* 字体系统 */
+  --font-family: "SimSun", "宋体", serif;  /* 宋体，传递古典感 */
+  --font-size-title: 24px;      /* 标题字号 */
+  --font-size-subtitle: 18px;   /* 副标题字号 */
+  --font-size-body: 16px;       /* 正文字号 */
+  --font-size-small: 14px;       /* 小字号，用于辅助信息 */
+}
+
+/**
+ * body 全局样式
+ * 设置基础字体、背景和行高
+ * 背景使用径向渐变模拟淡墨晕染效果
+ */
+body {
+  font-family: var(--font-family);
+  background: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  
+  /* 淡墨晕染纹理背景 - 使用径向渐变模拟水墨效果 */
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(46, 70, 59, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(46, 70, 59, 0.02) 0%, transparent 50%);
+  background-attachment: fixed;  /* 固定背景，滚动时不移动 */
+}
+
+/* 导航栏样式 */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: rgba(46, 70, 59, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-content {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.nav-item {
+  color: var(--white);
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-item:hover {
+  opacity: 0.9;
+}
+
+.nav-item.active {
+  border-bottom: 2px solid var(--white);
+}
+
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 2px;
+  background: var(--white);
+}
+
+/* 页面容器 */
+.page-container {
+  margin-top: 70px;
+  min-height: calc(100vh - 70px);
+  padding: 30px;
+}
+
+/* 卡片样式 */
+.card {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background: #1e3028;
+  transform: scale(0.97);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+/* 输入框样式 */
+.input {
+  padding: 12px 16px;
+  border: 2px solid var(--medium-gray);
+  border-radius: var(--border-radius);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  background: var(--white);
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(46, 70, 59, 0.1);
+}
+
+/* 标题样式 */
+.title {
+  font-size: var(--font-size-title);
+  font-weight: bold;
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+.subtitle {
+  font-size: var(--font-size-subtitle);
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+}
+
+/* 文本样式 */
+.text-primary {
+  color: var(--primary-color);
+}
+
+.text-gray {
+  color: #666;
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--light-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1e3028;
+}
+
