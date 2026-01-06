@@ -102,7 +102,11 @@
                     v-model="editProfile.nickname"
                     type="text"
                     class="form-input"
+                    placeholder="请输入昵称"
                   />
+                  <p v-if="isEditing && nicknameError" class="form-error">
+                    {{ nicknameError }}
+                  </p>
                 </div>
                 <div class="form-item">
                   <label>个性签名</label>
@@ -132,58 +136,13 @@
                     class="edit-btn"
                     @click="startEdit"
                   >
-                    编辑
+                    编辑资料
                   </button>
                   <template v-else>
                     <button class="save-btn" @click="saveProfile">保存</button>
                     <button class="cancel-btn" @click="cancelEdit">取消</button>
                   </template>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 设置与帮助 -->
-        <div class="function-card">
-          <div class="card-header">
-            <span class="card-icon">⚙️</span>
-            <h3 class="card-title">设置与帮助</h3>
-          </div>
-          <div class="card-content">
-            <div class="settings-section">
-              <div class="setting-item">
-                <label>主题切换</label>
-                <div class="toggle-switch" @click="toggleTheme">
-                  <div class="toggle-slider" :class="{ active: isDarkMode }"></div>
-                </div>
-                <span class="toggle-label">{{ isDarkMode ? '夜间' : '日间' }}</span>
-              </div>
-              <div class="setting-item">
-                <label>字体大小</label>
-                <div class="font-size-buttons">
-                  <button 
-                    v-for="size in fontSizes" 
-                    :key="size.value"
-                    class="font-size-btn"
-                    :class="{ active: currentFontSize === size.value }"
-                    @click="setFontSize(size.value)"
-                  >
-                    {{ size.label }}
-                  </button>
-                </div>
-              </div>
-              <div class="setting-item">
-                <label>关于我们</label>
-                <button class="about-btn" @click="showAbout = true">
-                  查看版本信息
-                </button>
-              </div>
-              <div class="setting-item">
-                <label>反馈建议</label>
-                <button class="feedback-btn" @click="showFeedback">
-                  我要反馈
-                </button>
               </div>
             </div>
           </div>
@@ -196,16 +155,6 @@
         <p class="version">v1.0.0</p>
       </div>
 
-      <!-- 关于弹窗 -->
-      <div v-if="showAbout" class="modal-overlay" @click="showAbout = false">
-        <div class="modal-content" @click.stop>
-          <h3>关于我们</h3>
-          <p>古诗词学习网致力于传承和弘扬中华优秀传统文化，为广大诗词爱好者提供便捷的学习平台。</p>
-          <p><strong>版本号：</strong>v1.0.0</p>
-          <p><strong>开发团队：</strong>人机交互课程项目组</p>
-          <button class="modal-close-btn" @click="showAbout = false">关闭</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -221,15 +170,7 @@ const router = useRouter()
 const favorites = ref([])
 const history = ref([])
 const isEditing = ref(false)
-const showAbout = ref(false)
-const isDarkMode = ref(false)
-const currentFontSize = ref('medium')
-
-const fontSizes = [
-  { label: '小', value: 'small' },
-  { label: '中', value: 'medium' },
-  { label: '大', value: 'large' }
-]
+const nicknameError = ref('')
 
 const profile = ref({
   nickname: '诗词爱好者',
@@ -257,6 +198,7 @@ const totalHours = computed(() => {
 
 const startEdit = () => {
   isEditing.value = true
+  nicknameError.value = ''
   editProfile.value = {
     nickname: profile.value.nickname,
     signature: profile.value.signature
@@ -264,14 +206,22 @@ const startEdit = () => {
 }
 
 const saveProfile = () => {
+  const trimmedName = editProfile.value.nickname.trim()
+  if (!trimmedName) {
+    nicknameError.value = '昵称不能为空'
+    return
+  }
+  nicknameError.value = ''
   profile.value.nickname = editProfile.value.nickname
   profile.value.signature = editProfile.value.signature
   isEditing.value = false
   localStorage.setItem('profile', JSON.stringify(profile.value))
+  window.alert('资料已保存')
 }
 
 const cancelEdit = () => {
   isEditing.value = false
+  nicknameError.value = ''
 }
 
 const removeFavorite = (id) => {
@@ -285,26 +235,10 @@ const removeFavorite = (id) => {
 }
 
 const clearHistory = () => {
-  if (confirm('确定要清空学习轨迹吗？')) {
-    localStorage.setItem('history', JSON.stringify([]))
-    history.value = []
-  }
-}
-
-const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value
-  localStorage.setItem('darkMode', isDarkMode.value)
-  // 这里可以添加主题切换逻辑
-}
-
-const setFontSize = (size) => {
-  currentFontSize.value = size
-  localStorage.setItem('fontSize', size)
-  document.documentElement.style.fontSize = size === 'small' ? '14px' : size === 'large' ? '18px' : '16px'
-}
-
-const showFeedback = () => {
-  alert('感谢您的反馈！我们会认真考虑您的建议。')
+  const ok = window.confirm('确定要清空学习轨迹吗？此操作不可撤销。')
+  if (!ok) return
+  localStorage.setItem('history', JSON.stringify([]))
+  history.value = []
 }
 
 const goToPoem = (id) => {
@@ -359,18 +293,6 @@ onMounted(() => {
   if (savedProfile) {
     profile.value = JSON.parse(savedProfile)
   }
-  
-  // 加载设置
-  const savedDarkMode = localStorage.getItem('darkMode')
-  if (savedDarkMode) {
-    isDarkMode.value = savedDarkMode === 'true'
-  }
-  
-  const savedFontSize = localStorage.getItem('fontSize')
-  if (savedFontSize) {
-    currentFontSize.value = savedFontSize
-    setFontSize(savedFontSize)
-  }
 })
 </script>
 
@@ -381,7 +303,7 @@ onMounted(() => {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 25px;
   margin-bottom: 40px;
 }
@@ -667,111 +589,6 @@ onMounted(() => {
   background: #ddd;
 }
 
-/* 设置 */
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--light-gray);
-}
-
-.setting-item:last-child {
-  border-bottom: none;
-}
-
-.setting-item label {
-  font-size: var(--font-size-body);
-  color: var(--text-color);
-  font-weight: bold;
-}
-
-.toggle-switch {
-  width: 50px;
-  height: 26px;
-  background: var(--medium-gray);
-  border-radius: 13px;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.toggle-slider {
-  width: 22px;
-  height: 22px;
-  background: var(--white);
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: all 0.3s ease;
-}
-
-.toggle-slider.active {
-  left: 26px;
-  background: var(--primary-color);
-}
-
-.toggle-switch.active {
-  background: var(--primary-color);
-}
-
-.toggle-label {
-  font-size: var(--font-size-small);
-  color: #666;
-  margin-left: 10px;
-}
-
-.font-size-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.font-size-btn {
-  padding: 6px 15px;
-  border: 2px solid var(--medium-gray);
-  background: var(--white);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: var(--font-family);
-  font-size: var(--font-size-small);
-}
-
-.font-size-btn.active {
-  border-color: var(--primary-color);
-  background: var(--primary-color);
-  color: var(--white);
-}
-
-.font-size-btn:hover {
-  border-color: var(--primary-color);
-}
-
-.about-btn,
-.feedback-btn {
-  padding: 8px 20px;
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: var(--font-family);
-  font-size: var(--font-size-small);
-}
-
-.about-btn:hover,
-.feedback-btn:hover {
-  background: #1e3028;
-  transform: scale(0.97);
-}
 
 .empty-state {
   text-align: center;
@@ -799,54 +616,10 @@ onMounted(() => {
   color: #666;
 }
 
-/* 弹窗 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background: var(--white);
-  border-radius: var(--border-radius);
-  padding: 30px;
-  max-width: 500px;
-  width: 90%;
-}
-
-.modal-content h3 {
-  font-size: var(--font-size-subtitle);
-  color: var(--primary-color);
-  margin-bottom: 20px;
-}
-
-.modal-content p {
-  margin-bottom: 15px;
-  line-height: 1.8;
-  color: var(--text-color);
-}
-
-.modal-close-btn {
-  width: 100%;
-  padding: 10px;
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  margin-top: 20px;
-  transition: all 0.3s ease;
-}
-
-.modal-close-btn:hover {
-  background: #1e3028;
+/* 表单错误提示 */
+.form-error {
+  font-size: var(--font-size-small);
+  color: #c0392b;
 }
 
 @media (max-width: 1200px) {

@@ -11,9 +11,20 @@
             class="library-search-input"
             placeholder="搜索诗词..."
             @keyup.enter="performSearch"
+            aria-label="搜索诗词"
           />
-          <button class="library-search-btn" @click="performSearch">搜索</button>
+          <button
+            class="library-search-btn"
+            type="button"
+            :disabled="!searchKeyword.trim() && activeCategory === 'all'"
+            @click="performSearch"
+          >
+            搜索
+          </button>
         </div>
+        <p class="search-hint">
+          支持按诗题、作者或内容关键词搜索，或通过下方分类快速浏览。
+        </p>
         <div class="filter-tabs">
           <div 
             v-for="category in categories" 
@@ -28,7 +39,11 @@
       </div>
 
       <!-- 诗词列表 -->
-      <div class="poetry-list">
+      <div
+        class="poetry-list"
+        :aria-busy="loading"
+        aria-live="polite"
+      >
         <div 
           v-for="poem in displayedPoems" 
           :key="poem.id"
@@ -52,8 +67,17 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="displayedPoems.length === 0" class="empty-state">
-        <p>暂无诗词，试试其他搜索条件吧~</p>
+      <div v-if="!loading && displayedPoems.length === 0" class="empty-state">
+        <p>未找到符合条件的诗词，可以尝试：</p>
+        <ul>
+          <li>简化或更换关键词</li>
+          <li>切换上方的分类标签</li>
+        </ul>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-state">
+        <p>正在加载诗词，请稍候…</p>
       </div>
     </div>
   </div>
@@ -117,11 +141,12 @@ const goToDetail = (id) => {
   router.push(`/poetry/${id}`)
 }
 
-watch(() => route.query.search, val => {
-  if (val) searchKeyword.value = val
-})
-
-watch(searchKeyword, () => performSearch())
+watch(
+  () => route.query.search,
+  val => {
+    searchKeyword.value = val || ''
+  }
+)
 
 onMounted(async () => {
   allIndex.value = await loadIndex()
@@ -142,6 +167,12 @@ onMounted(async () => {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+}
+
+.search-hint {
+  font-size: var(--font-size-small);
+  color: #777;
+  margin-bottom: 16px;
 }
 
 .library-search-input {
@@ -273,6 +304,21 @@ onMounted(async () => {
   text-align: center;
   padding: 60px 20px;
   color: #999;
+  font-size: var(--font-size-body);
+}
+
+.empty-state ul {
+  list-style: disc;
+  margin: 12px auto 0;
+  padding-left: 20px;
+  max-width: 360px;
+  text-align: left;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
   font-size: var(--font-size-body);
 }
 

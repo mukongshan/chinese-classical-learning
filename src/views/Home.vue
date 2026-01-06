@@ -1,77 +1,146 @@
 <template>
   <div class="home-page">
     <NavBar />
-    <div class="page-container">
-      <!-- 中部核心功能区 -->
-      <div class="main-content">
-        <!-- 左侧分类入口 -->
-        <div class="category-panel">
-          <h3 class="category-title">顶层分类</h3>
-          <div class="category-list">
-            <div 
-              v-for="category in categories" 
-              :key="category.id"
-              class="category-item"
-              @click="goToCategory(category.id)"
-            >
-              {{ category.name }}
-            </div>
+    <div class="home-container">
+      <!-- 顶部欢迎与简介 -->
+      <section class="hero">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h1 class="hero-title">与千年诗文，相遇当下</h1>
+            <p class="hero-subtitle">
+              一处兼具检索、精读与练习的诗文小站，帮助你在碎片时间里，温柔地走近古典中文。
+            </p>
           </div>
         </div>
+      </section>
 
-        <!-- 中间搜索核心区 -->
-        <div class="search-panel">
-          <div class="search-box-wrapper">
-            <input
-              v-model="searchKeyword"
-              type="text"
-              class="search-input"
-              placeholder="搜索诗词 / 文言文"
-              @keyup.enter="handleSearch"
-              @focus="isFocused = true"
-              @blur="isFocused = false"
-            />
-            <button class="search-btn" @click="handleSearch">
-              <span class="search-icon">🔍</span>
+      <!-- 中部三栏核心区 -->
+      <div class="main-content">
+        <!-- 左侧学习入口 -->
+        <aside class="side-panel">
+          <h3 class="side-title">快速开始</h3>
+          <div class="side-grid">
+            <button
+              class="side-entry"
+              type="button"
+              @click="goToCategory('tang')"
+            >
+              <span class="side-entry-label">唐诗小集</span>
+              <span class="side-entry-desc">经典篇目入门</span>
+            </button>
+            <button
+              class="side-entry"
+              type="button"
+              @click="goToCategory('songci')"
+            >
+              <span class="side-entry-label">宋词夜读</span>
+              <span class="side-entry-desc">细品婉约豪放</span>
+            </button>
+            <button
+              class="side-entry"
+              type="button"
+              @click="goToDictionary"
+            >
+              <span class="side-entry-label">查一查字词</span>
+              <span class="side-entry-desc">生僻字一键释义</span>
             </button>
           </div>
-          <div v-if="searchResults.length > 0" class="search-results">
-            <div 
-              v-for="result in searchResults" 
-              :key="result.id"
-              class="result-item"
-              @click="goToPoem(result.id)"
-            >
-              <div class="result-title">{{ result.title }}</div>
-              <div class="result-author">{{ result.author }}</div>
-            </div>
-          </div>
-        </div>
+        </aside>
 
-        <!-- 右侧热门内容预览 -->
-        <div class="preview-panel">
-          <h3 class="preview-title">热门推荐</h3>
-          <div class="preview-list">
-            <div 
-              v-for="poem in popularPoems" 
-              :key="poem.id"
-              class="preview-card"
-              @click="goToPoem(poem.id)"
+        <!-- 中间搜索与模块入口 -->
+        <section class="search-panel">
+          <div class="search-card">
+            <div class="search-box-wrapper">
+              <input
+                v-model="searchKeyword"
+                type="text"
+                class="search-input"
+                placeholder="试着搜：静夜思 / 李白 / 明月几时有"
+                @keyup.enter="handleSearch"
+                @focus="isFocused = true"
+                @blur="isFocused = false"
+                aria-label="搜索诗词或文言文"
+              />
+              <button
+                class="search-btn"
+                type="button"
+                :disabled="!searchKeyword.trim()"
+                @click="handleSearch"
+              >
+                <span class="search-icon">🔍</span>
+              </button>
+            </div>
+            <p class="search-hint">
+              输入诗题、作者或片段内容，按回车或点击右侧按钮开始搜索。
+            </p>
+            <div v-if="loadingSearch" class="search-status">
+              正在搜索相关诗词…
+            </div>
+            <div
+              v-if="!loadingSearch && searchResults.length > 0"
+              class="search-results"
             >
-              <div class="card-title">{{ poem.title }}</div>
-              <div class="card-author">{{ poem.author }}</div>
-              <div class="card-preview">
-                {{ poem.content[0] }}...
+              <div 
+                v-for="result in searchResults" 
+                :key="result.id"
+                class="result-item"
+                @click="goToPoem(result.id)"
+              >
+                <div class="result-title">{{ result.title }}</div>
+                <div class="result-author">{{ result.author }}</div>
               </div>
             </div>
           </div>
-        </div>
+
+          <div class="modules-row">
+            <div class="module-card" @click="goToPoetryLibrary">
+              <h3 class="module-title">诗词精读</h3>
+              <p class="module-desc">
+                按篇浏览、进入详情后可开启填空与断句练习，适合系统梳理一首诗。
+              </p>
+            </div>
+            <div class="module-card" @click="goToProfile">
+              <h3 class="module-title">我的学习</h3>
+              <p class="module-desc">
+                查看收藏与学习轨迹，了解自己近期读过哪些作品。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右侧今日一诗 -->
+        <aside class="preview-panel" v-if="popularPoems.length">
+          <h3 class="preview-title">今日一诗</h3>
+          <div
+            class="preview-card featured-card"
+            @click="goToPoem(popularPoems[0].id)"
+          >
+            <div class="card-title">{{ popularPoems[0].title }}</div>
+            <div class="card-author">{{ popularPoems[0].author }}</div>
+            <div class="card-preview">
+              {{ popularPoems[0].content[0] }}…
+            </div>
+          </div>
+          <h4 class="preview-subtitle">更多可选</h4>
+          <div class="preview-list">
+            <button
+              v-for="poem in popularPoems.slice(1)"
+              :key="poem.id"
+              type="button"
+              class="preview-pill"
+              @click="goToPoem(poem.id)"
+            >
+              <span class="pill-title">{{ poem.title }}</span>
+              <span class="pill-author">{{ poem.author }}</span>
+            </button>
+          </div>
+        </aside>
       </div>
 
       <!-- 底部品牌区 -->
-      <div class="footer-section">
+      <footer class="footer-section">
         <p class="slogan">以诗为舟，渡向千年文脉</p>
-      </div>
+      </footer>
     </div>
   </div>
 </template>
@@ -90,7 +159,6 @@ import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import { getPopularPoemsLazy, searchPoemsLazy, loadIndex } from '../utils/dataLoader'
-import { categories } from '../utils/data.js'
 
 const router = useRouter()
 
@@ -100,19 +168,22 @@ const popularPoems = ref([])
 const searchResults = ref([])
 const loadingSearch = ref(false)
 
-watch(searchKeyword, async (val) => {
-  if (!val) {
-    searchResults.value = []
-    return
+watch(
+  searchKeyword,
+  async (val) => {
+    if (!val) {
+      searchResults.value = []
+      return
+    }
+    loadingSearch.value = true
+    try {
+      const list = await searchPoemsLazy(val)
+      searchResults.value = list.slice(0, 5)
+    } finally {
+      loadingSearch.value = false
+    }
   }
-  loadingSearch.value = true
-  try {
-    const list = await searchPoemsLazy(val)
-    searchResults.value = list.slice(0, 5)
-  } finally {
-    loadingSearch.value = false
-  }
-})
+)
 
 const handleSearch = () => {
   if (searchKeyword.value.trim()) {
@@ -128,6 +199,18 @@ const goToCategory = (categoryId) => {
     path: '/poetry',
     query: { category: categoryId }
   })
+}
+
+const goToDictionary = () => {
+  router.push('/dictionary')
+}
+
+const goToPoetryLibrary = () => {
+  router.push('/poetry')
+}
+
+const goToProfile = () => {
+  router.push('/profile')
 }
 
 const goToPoem = (id) => {
@@ -146,53 +229,128 @@ onMounted(async () => {
   min-height: 100vh;
 }
 
-.main-content {
-  display: grid;
-  grid-template-columns: 22% 50% 25%;
-  gap: 30px;
-  margin-bottom: 40px;
+/* 首页专用容器，比普通页面更宽 */
+.home-container {
+  margin-top: 70px;
+  min-height: calc(100vh - 70px);
+  padding: 40px 60px 50px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* 左侧分类面板 */
-.category-panel {
+.hero {
+  margin-bottom: 50px;
+  padding: 0 20px;
+}
+
+.hero-content {
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-text {
+  max-width: 700px;
+  text-align: center;
+}
+
+.hero-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(46, 70, 59, 0.06);
+  color: var(--primary-color);
+  font-size: var(--font-size-small);
+  margin-bottom: 10px;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text-color);
+  margin-bottom: 10px;
+}
+
+.hero-subtitle {
+  font-size: var(--font-size-body);
+  color: #555;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  gap: 40px;
+  margin-bottom: 50px;
+  padding: 0 20px;
+}
+
+/* 左侧入口面板 */
+.side-panel {
   background: var(--light-gray);
   border-radius: var(--border-radius);
   padding: 20px;
   height: fit-content;
+  position: sticky;
+  top: 90px;
 }
 
-.category-title {
+.side-title {
   font-size: var(--font-size-body);
   font-weight: bold;
   color: var(--primary-color);
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
-.category-list {
+.side-grid {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
-.category-item {
-  color: var(--primary-color);
-  font-size: var(--font-size-body);
+.side-entry {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: var(--white);
+  border-radius: 8px;
+  padding: 10px 12px;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, transform 0.1s ease, background-color 0.2s ease;
 }
 
-.category-item:hover {
-  text-decoration: underline;
-  background: rgba(46, 70, 59, 0.1);
+.side-entry:hover {
+  background: #f3f3f3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* 中间搜索面板 */
+.side-entry-label {
+  display: block;
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.side-entry-desc {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--font-size-small);
+  color: #666;
+}
+
+/* 中间搜索与模块 */
 .search-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+}
+
+.search-card {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  padding: 18px 18px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .search-box-wrapper {
@@ -229,12 +387,16 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .search-btn:hover {
   background: #1e3028;
-  transform: scale(0.97);
+}
+
+.search-btn:disabled {
+  background: var(--medium-gray);
+  cursor: not-allowed;
 }
 
 .search-icon {
@@ -242,11 +404,22 @@ onMounted(async () => {
   color: var(--white);
 }
 
+.search-hint {
+  font-size: var(--font-size-small);
+  color: #777;
+}
+
+.search-status {
+  font-size: var(--font-size-small);
+  color: #666;
+}
+
 .search-results {
   background: var(--white);
   border-radius: var(--border-radius);
   padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-top: 4px;
 }
 
 .result-item {
@@ -271,11 +444,47 @@ onMounted(async () => {
   font-size: var(--font-size-small);
 }
 
+.modules-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.module-card {
+  background: rgba(245, 245, 245, 0.9);
+  border-radius: var(--border-radius);
+  padding: 14px 14px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.1s ease;
+}
+
+.module-card:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.module-title {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 6px;
+}
+
+.module-desc {
+  font-size: var(--font-size-small);
+  color: #666;
+}
+
 /* 右侧预览面板 */
 .preview-panel {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: sticky;
+  top: 90px;
+  height: fit-content;
 }
 
 .preview-title {
@@ -284,10 +493,16 @@ onMounted(async () => {
   color: var(--primary-color);
 }
 
+.preview-subtitle {
+  margin-top: 10px;
+  font-size: var(--font-size-small);
+  color: #666;
+}
+
 .preview-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 }
 
 .preview-card {
@@ -303,6 +518,41 @@ onMounted(async () => {
   transform: scale(1.02);
   opacity: 0.9;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.featured-card {
+  border-left: 3px solid var(--primary-color);
+}
+
+.preview-pill {
+  width: 100%;
+  border-radius: 999px;
+  border: none;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease,
+    box-shadow 0.2s ease;
+}
+
+.preview-pill:hover {
+  background: #f3f3f3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.pill-title {
+  font-size: var(--font-size-small);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.pill-author {
+  font-size: var(--font-size-small);
+  color: #666;
 }
 
 .card-title {
@@ -342,31 +592,78 @@ onMounted(async () => {
 }
 
 /* 响应式设计 */
+@media (max-width: 1400px) {
+  .home-container {
+    padding: 40px 40px 50px;
+  }
+}
+
 @media (max-width: 1200px) {
+  .home-container {
+    padding: 30px 30px 40px;
+  }
+
+  .main-content {
+    grid-template-columns: 200px 1fr 240px;
+    gap: 30px;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 1024px) {
   .main-content {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 30px;
+    padding: 0;
   }
-  
-  .category-panel {
-    order: 2;
+
+  .side-panel,
+  .preview-panel {
+    position: static;
   }
-  
+
   .search-panel {
     order: 1;
   }
-  
+
+  .side-panel {
+    order: 2;
+  }
+
   .preview-panel {
     order: 3;
   }
-  
+
   .preview-list {
     flex-direction: row;
     overflow-x: auto;
   }
-  
+
   .preview-card {
     min-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    padding: 24px 20px 30px;
+  }
+
+  .hero {
+    padding: 0;
+    margin-bottom: 30px;
+  }
+
+  .hero-title {
+    font-size: 24px;
+  }
+
+  .main-content {
+    gap: 24px;
+  }
+
+  .modules-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -73,45 +73,41 @@ body {
 
 .navbar-content {
   display: flex;
-  gap: 40px;
+  gap: 32px;
   align-items: center;
+  justify-content: center;
+  max-width: 1120px;
+  width: 100%;
+  padding: 0 24px;
 }
 
 .nav-item {
   color: var(--white);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   text-decoration: none;
-  padding: 8px 16px;
-  transition: all 0.3s ease;
+  padding: 6px 12px;
+  transition: color 0.2s ease;
   cursor: pointer;
   position: relative;
 }
 
 .nav-item:hover {
-  opacity: 0.9;
+  color: #f4f4f4;
 }
 
 .nav-item.active {
-  border-bottom: 2px solid var(--white);
-}
-
-.nav-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 2px;
-  background: var(--white);
+  color: #ffffff;
 }
 
 /* 页面容器 */
 .page-container {
   margin-top: 70px;
   min-height: calc(100vh - 70px);
-  padding: 30px;
+  padding: 32px 24px 40px;
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* 卡片样式 */
@@ -120,13 +116,12 @@ body {
   border-radius: var(--border-radius);
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .card:hover {
-  transform: scale(1.02);
-  opacity: 0.9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 按钮样式 */
@@ -137,7 +132,8 @@ body {
   font-family: var(--font-family);
   font-size: var(--font-size-body);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn-primary {
@@ -147,11 +143,12 @@ body {
 
 .btn-primary:hover {
   background: #1e3028;
-  transform: scale(0.97);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 }
 
 .btn-primary:active {
-  transform: scale(0.95);
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 /* 输入框样式 */

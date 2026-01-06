@@ -15,12 +15,21 @@
                 placeholder="输入文言文字词如(庖丁、鸿鹄)"
                 @keyup.enter="performSearch"
                 @input="handleInput"
+              aria-label="输入要查询的文言文字词"
               />
-              <button class="dictionary-search-btn" @click="performSearch">
+              <button
+                class="dictionary-search-btn"
+                type="button"
+                :disabled="!searchKeyword.trim()"
+                @click="performSearch"
+              >
                 <span class="search-icon">🔍</span>
                 查询
               </button>
             </div>
+            <p class="search-hint">
+              支持按单字或词组精确查询，输入后按回车或点击按钮。
+            </p>
           </div>
 
           <!-- 查询结果展示区 -->
@@ -172,10 +181,10 @@ const searchWord = async (word) => {
  * 需要用户确认后执行
  */
 const clearHistory = async () => {
-  if (confirm('确定要清空查询历史吗？')) {
-    await clearDictHistory()
-    history.value = []
-  }
+  const ok = window.confirm('确定要清空查询历史吗？此操作不可撤销。')
+  if (!ok) return
+  await clearDictHistory()
+  history.value = []
 }
 
 onMounted(async () => {
@@ -245,12 +254,22 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .dictionary-search-btn:hover {
   background: #1e3028;
-  transform: scale(0.97);
+}
+
+.dictionary-search-btn:disabled {
+  background: var(--medium-gray);
+  cursor: not-allowed;
+}
+
+.search-hint {
+  margin-top: 12px;
+  font-size: var(--font-size-small);
+  color: #777;
 }
 
 /* 结果区域 */
