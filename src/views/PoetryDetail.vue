@@ -179,7 +179,7 @@
     <div class="chat-floating-header">
       <div class="chat-floating-title">
         <span class="dot"></span>
-        <span>与古人对话（通义千问）</span>
+        <span>与古人对话</span>
       </div>
       <button class="chat-toggle-btn" @click="toggleChat">
         {{ chatOpen ? '收起' : '展开' }}
@@ -217,7 +217,7 @@
           {{ sending ? '发送中…' : '发送' }}
         </button>
       </div>
-      <p class="chat-tip">首次对话会附带本诗的题目、作者、朝代和正文。请在文件内填写通义千问 API Key。</p>
+      <p class="chat-tip">首次对话会附带本诗的题目、作者、朝代和正文。</p>
     </div>
   </div>
 </template>
@@ -229,7 +229,7 @@ import NavBar from '../components/NavBar.vue'
 import { getPoemByIdLazy, loadIndex } from '../utils/dataLoader'
 import { searchDictionaryLazy } from '../utils/dictionaryLoader'
 
-// TODO: 将此处替换为你的通义千问 API Key
+// 通义千问 API Key：仅尝试读取本地配置（已在 .gitignore），不存在则为空
 const DASHSCOPE_API_KEY = ''
 
 const route = useRoute()
@@ -258,7 +258,7 @@ const chatInput = ref('')
 const sending = ref(false)
 const chatScrollRef = ref(null)
 const hasSentInitial = ref(false)
-const chatOpen = ref(true)
+const chatOpen = ref(false)
 
 // 根据模式生成当前渲染的行
 const renderedLines = computed(() => {
