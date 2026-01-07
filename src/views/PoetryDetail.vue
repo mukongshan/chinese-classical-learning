@@ -167,9 +167,57 @@
           </div>
         </div>
       </div>
+
     </div>
     <div v-else class="loading-state">
       <p>加载中...</p>
+    </div>
+  </div>
+
+  <!-- 浮动聊天窗口 · 右侧可收起 -->
+  <div class="chat-floating" :class="{ collapsed: !chatOpen }">
+    <div class="chat-floating-header">
+      <div class="chat-floating-title">
+        <span class="dot"></span>
+        <span>与古人对话（通义千问）</span>
+      </div>
+      <button class="chat-toggle-btn" @click="toggleChat">
+        {{ chatOpen ? '收起' : '展开' }}
+      </button>
+    </div>
+
+    <div v-if="chatOpen" class="chat-box">
+      <div class="chat-messages" ref="chatScrollRef">
+        <div
+          v-for="(msg, idx) in chatMessages"
+          :key="idx"
+          class="chat-message"
+          :class="msg.role"
+        >
+          <span class="chat-role">{{ msg.role === 'user' ? '我' : '千问' }}</span>
+          <p class="chat-text">{{ msg.content }}</p>
+        </div>
+        <div v-if="sending" class="chat-message assistant typing">
+          <span class="chat-role">千问</span>
+          <p class="chat-text">正在生成回复...</p>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea
+          v-model="chatInput"
+          class="chat-input"
+          placeholder="想和古人聊聊什么？比如：这首诗的意境是什么？"
+          rows="3"
+        />
+        <button
+          class="chat-send-btn"
+          :disabled="sending || !chatInput.trim()"
+          @click="sendChat"
+        >
+          {{ sending ? '发送中…' : '发送' }}
+        </button>
+      </div>
+      <p class="chat-tip">首次对话会附带本诗的题目、作者、朝代和正文。请在文件内填写通义千问 API Key。</p>
     </div>
   </div>
 </template>
@@ -180,6 +228,9 @@ import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import { getPoemByIdLazy, loadIndex } from '../utils/dataLoader'
 import { searchDictionaryLazy } from '../utils/dictionaryLoader'
+
+// TODO: 将此处替换为你的通义千问 API Key
+const DASHSCOPE_API_KEY = ''
 
 const route = useRoute()
 const router = useRouter()
@@ -200,6 +251,14 @@ const isSegmentMode = ref(false)
 const fillSegmentTargets = ref([]) // { lineIndex, segIndex }
 // 断句：以句号为单位的整句索引
 const segmentSentenceTargets = ref([]) // { lineIndex, segIndex }
+
+// 聊天相关
+const chatMessages = ref([])
+const chatInput = ref('')
+const sending = ref(false)
+const chatScrollRef = ref(null)
+const hasSentInitial = ref(false)
+const chatOpen = ref(true)
 
 // 根据模式生成当前渲染的行
 const renderedLines = computed(() => {
@@ -602,6 +661,76 @@ const goToPoem = (id) => {
   router.push(`/poetry/${id}`)
 }
 
+// 构造首轮上下文
+const buildPoemContext = () => {
+  if (!poem.value) return ''
+  const content = Array.isArray(poem.value.content)
+    ? poem.value.content.join(' / ')
+    : ''
+  return `诗题：${poem.value.title}；作者：${poem.value.author}；朝代：${poem.value.dynasty}；正文：${content}`
+}
+
+const sendChat = async () => {
+  if (!chatInput.value.trim() || sending.value) return
+  if (DASHSCOPE_API_KEY === 'YOUR_DASHSCOPE_API_KEY') {
+    window.alert('请先在 PoetryDetail.vue 中填写通义千问 API Key')
+    return
+  }
+
+  const userMessage = chatInput.value.trim()
+  chatMessages.value.push({ role: 'user', content: userMessage })
+  chatInput.value = ''
+  sending.value = true
+
+  const systemPrompt = '你是通晓中国古典诗词的学者，请结合提供的诗文信息进行解读或对话，口吻亲和、简洁。'
+  const initialContext = buildPoemContext()
+
+  const payload = {
+    model: 'qwen-plus',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...(hasSentInitial.value
+        ? []
+        : [{ role: 'user', content: `诗文信息：${initialContext}` }]),
+      ...chatMessages.value.map(m => ({ role: m.role, content: m.content })),
+    ]
+  }
+
+  try {
+    const resp = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await resp.json()
+    const reply = data?.choices?.[0]?.message?.content || '抱歉，没有获取到回复，请稍后再试。'
+    chatMessages.value.push({ role: 'assistant', content: reply })
+    hasSentInitial.value = true
+  } catch (err) {
+    chatMessages.value.push({ role: 'assistant', content: '请求失败，请检查网络或稍后再试。' })
+  } finally {
+    sending.value = false
+    requestAnimationFrame(() => {
+      if (chatScrollRef.value) {
+        chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight
+      }
+    })
+  }
+}
+
+const toggleChat = () => {
+  chatOpen.value = !chatOpen.value
+  requestAnimationFrame(() => {
+    if (chatOpen.value && chatScrollRef.value) {
+      chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight
+    }
+  })
+}
+
 onMounted(async () => {
   const id = route.params.id
   poem.value = await getPoemByIdLazy(id)
@@ -936,6 +1065,170 @@ onMounted(async () => {
   border-radius: var(--border-radius);
   padding: 30px;
   margin-top: 40px;
+}
+
+.chat-floating {
+  position: fixed;
+  top: 110px;
+  right: 24px;
+  width: 340px;
+  max-height: calc(100vh - 150px);
+  z-index: 1200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-floating.collapsed {
+  height: auto;
+}
+
+.chat-floating-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--medium-gray);
+}
+
+.chat-floating-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  display: inline-block;
+}
+
+.chat-toggle-btn {
+  border: none;
+  background: var(--light-gray);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 14px;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+}
+
+.chat-messages {
+  flex: 1;
+  min-height: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--light-gray);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-message {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chat-message.user {
+  border-left: 3px solid var(--primary-color);
+}
+
+.chat-message.assistant {
+  border-left: 3px solid #999;
+}
+
+.chat-message.typing {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.chat-role {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.chat-text {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+.chat-input-area {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input {
+  flex: 1;
+  border: 1px solid var(--medium-gray);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  resize: vertical;
+  min-height: 80px;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(46, 70, 59, 0.1);
+}
+
+.chat-send-btn {
+  width: 110px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary-color);
+  color: var(--white);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.chat-send-btn:disabled {
+  background: var(--medium-gray);
+  cursor: not-allowed;
+}
+
+.chat-send-btn:not(:disabled):hover {
+  background: #1e3028;
+}
+
+.chat-tip {
+  font-size: 12px;
+  color: #777;
+}
+
+@media (max-width: 1024px) {
+  .chat-floating {
+    right: 16px;
+    width: min(90vw, 340px);
+    top: auto;
+    bottom: 16px;
+    max-height: calc(70vh);
+  }
 }
 
 .recommendations-list {
