@@ -30,9 +30,6 @@
                 <div class="mode-tip" v-if="isFillMode">
                     提示：输入框处为被隐藏的句子内容，输入后会实时判断正误。
                 </div>
-                <div class="mode-tip" v-if="isSegmentMode">
-                    提示：断句模式仅展示《生于忧患，死于安乐》的断句示例。
-                </div>
             </div>
 
             <!-- 诗词正文展示区 -->
@@ -132,9 +129,9 @@
         </div>
     </div>
 
-    <!-- 浮动聊天窗口 · 右侧可收起 -->
-    <div class="chat-floating" :class="{ collapsed: !chatOpen }">
-        <div class="chat-floating-header">
+    <!-- 浮动聊天窗口 · 可拖动，右侧可收起 -->
+    <div ref="chatFloatingRef" class="chat-floating" :class="{ collapsed: !chatOpen }" :style="chatFloatingStyle">
+        <div class="chat-floating-header" @mousedown="onDragStart" @touchstart.prevent="onDragStart" :class="{ dragging: isDragging }">
             <div class="chat-floating-title">
                 <span class="dot"></span>
                 <span>与古人对话</span>
@@ -147,12 +144,10 @@
         <div v-if="chatOpen" class="chat-box">
             <div class="chat-messages" ref="chatScrollRef">
                 <div v-for="(msg, idx) in chatMessages" :key="idx" class="chat-message" :class="msg.role">
-                    <span class="chat-role">{{ msg.role === 'user' ? '我' : '千问' }}</span>
                     <p class="chat-text">{{ msg.content }}</p>
                 </div>
                 <div v-if="sending" class="chat-message assistant typing">
-                    <span class="chat-role">千问</span>
-                    <p class="chat-text">正在生成回复...</p>
+                    <p class="chat-text">...</p>
                 </div>
             </div>
             <div class="chat-input-area">
@@ -161,13 +156,12 @@
                     {{ sending ? '发送中…' : '发送' }}
                 </button>
             </div>
-            <p class="chat-tip">首次对话会附带本诗的题目、作者、朝代和正文。</p>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue' 
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import { getPoemByIdLazy, loadIndex } from '../utils/dataLoader'
@@ -220,6 +214,72 @@ const sending = ref(false)
 const chatScrollRef = ref(null)
 const hasSentInitial = ref(false)
 const chatOpen = ref(false)
+
+// 可拖动聊天窗口状态
+const chatFloatingRef = ref(null)
+const isDragging = ref(false)
+const isPositioned = ref(false)
+const chatPos = ref({ top: 110, left: null })
+const dragOffset = ref({ x: 0, y: 0 })
+
+const chatFloatingStyle = computed(() => {
+    if (!isPositioned.value) return {}
+    return {
+        left: `${chatPos.value.left}px`,
+        top: `${chatPos.value.top}px`,
+        right: 'auto',
+    }
+})
+
+const onDragStart = (e) => {
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const el = chatFloatingRef.value
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    isPositioned.value = true
+    chatPos.value.left = rect.left
+    chatPos.value.top = rect.top
+    dragOffset.value.x = clientX - rect.left
+    dragOffset.value.y = clientY - rect.top
+    isDragging.value = true
+    window.addEventListener('mousemove', onDragMove)
+    window.addEventListener('mouseup', onDragEnd)
+    window.addEventListener('touchmove', onDragMove, { passive: false })
+    window.addEventListener('touchend', onDragEnd)
+}
+
+const onDragMove = (e) => {
+    if (!isDragging.value) return
+    e.preventDefault()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    let left = clientX - dragOffset.value.x
+    let top = clientY - dragOffset.value.y
+    const minLeft = 8
+    const minTop = 8
+    const maxLeft = window.innerWidth - (chatFloatingRef.value?.offsetWidth || 340) - 8
+    const maxTop = window.innerHeight - (chatFloatingRef.value?.offsetHeight || 200) - 8
+    left = Math.min(Math.max(left, minLeft), maxLeft)
+    top = Math.min(Math.max(top, minTop), maxTop)
+    chatPos.value.left = left
+    chatPos.value.top = top
+}
+
+const onDragEnd = () => {
+    isDragging.value = false
+    window.removeEventListener('mousemove', onDragMove)
+    window.removeEventListener('mouseup', onDragEnd)
+    window.removeEventListener('touchmove', onDragMove)
+    window.removeEventListener('touchend', onDragEnd)
+}
+
+onBeforeUnmount(() => {
+    window.removeEventListener('mousemove', onDragMove)
+    window.removeEventListener('mouseup', onDragEnd)
+    window.removeEventListener('touchmove', onDragMove)
+    window.removeEventListener('touchend', onDragEnd)
+})
 
 // 根据模式生成当前渲染的行
 const renderedLines = computed(() => {
@@ -638,16 +698,19 @@ const sendChat = async () => {
 
     const systemPrompt = '你是通晓中国古典诗词的学者，请结合提供的诗文信息进行解读或对话，口吻亲和、简洁。'
     const initialContext = buildPoemContext()
+    // 首次提问时，额外提示 AI 以“诗人”身份来回答，回复更具诗意
+    const personaPrompt = !hasSentInitial.value ? '请在首轮回复中以作者的口吻回答，使用现代白话、通俗易懂的表达，语言亲切自然，但可适度引用诗句或简短古语作为例证。要求足够简洁，避免冗长。' : ''
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...(personaPrompt ? [{ role: 'system', content: personaPrompt }] : []),
+        ...(hasSentInitial.value ? [] : [{ role: 'user', content: `诗文信息：${initialContext}` }]),
+        ...chatMessages.value.map(m => ({ role: m.role, content: m.content })),
+    ]
 
     const payload = {
         model: 'qwen-plus',
-        messages: [
-            { role: 'system', content: systemPrompt },
-            ...(hasSentInitial.value
-                ? []
-                : [{ role: 'user', content: `诗文信息：${initialContext}` }]),
-            ...chatMessages.value.map(m => ({ role: m.role, content: m.content })),
-        ]
+        messages,
     }
 
     try {
@@ -1143,6 +1206,11 @@ onMounted(async () => {
     justify-content: space-between;
     padding: 12px 14px;
     border-bottom: 1px solid var(--medium-gray);
+    cursor: grab;
+    user-select: none;
+}
+.chat-floating-header.dragging {
+    cursor: grabbing;
 }
 
 .chat-floating-title {
@@ -1193,18 +1261,67 @@ onMounted(async () => {
 }
 
 .chat-message {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 10px 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    max-width: 78%;
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
 }
 
-.chat-message.user {
-    border-left: 3px solid var(--primary-color);
-}
-
+/* 助手：左侧气泡 */
 .chat-message.assistant {
-    border-left: 3px solid #999;
+    align-self: flex-start;
+    background: #ffffff;
+    color: var(--text-color);
+    margin-right: auto;
+}
+
+.chat-message.assistant::after {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid #ffffff;
+}
+
+/* 用户：右侧气泡 */
+.chat-message.user {
+    align-self: flex-end;
+    background: var(--primary-color);
+    color: #fff;
+    margin-left: auto;
+}
+
+.chat-message.user::after {
+    content: "";
+    position: absolute;
+    right: -8px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid var(--primary-color);
+}
+
+/* 角色名和文本颜色微调 */
+.chat-message.user .chat-role {
+    color: rgba(255,255,255,0.9);
+}
+.chat-message.assistant .chat-role {
+    color: #666;
+}
+.chat-message.user .chat-text {
+    color: #fff;
+    text-align: right;
+}
+.chat-message.assistant .chat-text {
+    color: var(--text-color);
+    text-align: left;
 }
 
 .chat-message.typing {
