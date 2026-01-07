@@ -28,6 +28,14 @@
                             <span class="side-entry-label">宋词夜读</span>
                             <span class="side-entry-desc">细品婉约豪放</span>
                         </button>
+                        <button class="side-entry" type="button" @click="goToCategory('yuan')">
+                            <span class="side-entry-label">元曲拾遗</span>
+                            <span class="side-entry-desc">散曲杂剧速览</span>
+                        </button>
+                        <button class="side-entry" type="button" @click="goToCategory('pre-qin')">
+                            <span class="side-entry-label">先秦阅读</span>
+                            <span class="side-entry-desc">诗经/诸子速读</span>
+                        </button>
                         <button class="side-entry" type="button" @click="goToDictionary">
                             <span class="side-entry-label">查一查字词</span>
                             <span class="side-entry-desc">生僻字一键释义</span>
@@ -193,6 +201,8 @@ onMounted(async () => {
 
 /* 首页专用容器，比普通页面更宽 */
 .home-container {
+  display: flex;
+  flex-direction: column;
     margin-top: 70px;
     min-height: calc(100vh - 70px);
     padding: 40px 60px 50px;
@@ -544,7 +554,7 @@ onMounted(async () => {
 .footer-section {
     text-align: center;
     padding: 30px 0;
-    margin-top: 60px;
+  margin-top: auto;
 }
 
 .slogan {
