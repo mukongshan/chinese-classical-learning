@@ -189,7 +189,7 @@ const saveProfile = () => {
     profile.value.signature = editProfile.value.signature
     isEditing.value = false
     localStorage.setItem('profile', JSON.stringify(profile.value))
-    window.alert('资料已保存')
+
 }
 
 const cancelEdit = () => {

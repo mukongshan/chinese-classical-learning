@@ -431,6 +431,10 @@ const generateFillTargets = () => {
   fillSegmentTargets.value = shuffled.slice(0, targetCount)
 }
 
+// 通用：去除标点（用于长度计算 / 断句展示）
+const stripPunctuation = (text) =>
+  text.replace(/[，。、“”‘’？！；：,.!?、;:…—\-《》【】（）()「」『』【】]/g, '')
+
 // 将一行拆分为“以句号为结束”的整句（用于断句）
 const splitLineForSegment = (line) => {
   const result = []
@@ -457,7 +461,7 @@ const generateSegmentTargets = () => {
     const segments = splitLineForSegment(line)
     segments.forEach((seg, segIndex) => {
       if (!seg.hasPunc) return // 只选真正以句号结尾的整句
-      const pureLength = seg.text.replace(/[，。？！；、,.!?;]/g, '').length
+      const pureLength = stripPunctuation(seg.text).length
       if (pureLength >= 6) {
         candidates.push({ lineIndex, segIndex, length: pureLength })
       }
@@ -500,26 +504,13 @@ const makeFillPlaceholder = (line, lineIndex) => {
     .join('')
 }
 
-// 生成断句模式下的整行文本（仅对被选中的“句号句”去掉标点）
 const makeSegmentLine = (line, lineIndex) => {
   if (!line) return ''
-  const segments = splitLineForSegment(line)
-  if (!segments.length) return line
-
-  const isTargetSeg = (segIndex) =>
-    segmentSentenceTargets.value.some(
-      (s) => s.lineIndex === lineIndex && s.segIndex === segIndex
-    )
-
-  return segments
-    .map((seg, segIndex) => {
-      if (!seg.hasPunc || !isTargetSeg(segIndex)) {
-        return seg.text
-      }
-      // 删除该整句中的所有中文标点
-      return seg.text.replace(/[，。、“”？！；：,.!?、]/g, '')
-    })
-    .join('')
+  // 整行命中则整行去标点，避免高亮块内残留逗号/引号等
+  if (isSegmentTarget(lineIndex)) {
+    return stripPunctuation(line)
+  }
+  return line
 }
 
 // 显示某一行的原句（仅对断句模式下的目标行生效）
@@ -696,7 +687,8 @@ onMounted(async () => {
   border-radius: var(--border-radius);
   padding: 40px;
   margin-bottom: 30px;
-  width: 75%;
+  width: 92%;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -715,7 +707,8 @@ onMounted(async () => {
 
 /* 精读 / 练习模式工具栏 */
 .poetry-tools {
-  width: 75%;
+  width: 92%;
+  max-width: 1200px;
   margin: 20px auto 10px;
   padding: 12px 24px;
   background: var(--white);
@@ -877,7 +870,8 @@ onMounted(async () => {
   border-radius: var(--border-radius);
   padding: 30px;
   margin-bottom: 30px;
-  width: 75%;
+  width: 92%;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
 }
