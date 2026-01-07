@@ -10,9 +10,9 @@
 
 /* 全局重置样式 */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 /**
@@ -20,21 +20,37 @@
  * 使用CSS变量便于统一管理和主题切换
  */
 :root {
-  /* 色彩体系 - 新中式水墨风格配色 */
-  --primary-color: #2E463B; /* 深绿（墨绿），主色调 */
-  --bg-color: #FAF9F6;      /* 米白背景，营造留白意境 */
-  --text-color: #333333;    /* 深灰文字，增强层次 */
-  --light-gray: #F5F5F5;    /* 浅灰色，用于卡片背景 */
-  --medium-gray: #EEEEEE;   /* 中灰色，用于分割线 */
-  --white: #FFFFFF;         /* 白色，用于重要区块 */
-  --border-radius: 10px;    /* 统一圆角半径 */
-  
-  /* 字体系统 */
-  --font-family: "SimSun", "宋体", serif;  /* 宋体，传递古典感 */
-  --font-size-title: 24px;      /* 标题字号 */
-  --font-size-subtitle: 18px;   /* 副标题字号 */
-  --font-size-body: 16px;       /* 正文字号 */
-  --font-size-small: 14px;       /* 小字号，用于辅助信息 */
+    /* 色彩体系 - 新中式水墨风格配色 */
+    --primary-color: #2E463B;
+    /* 深绿（墨绿），主色调 */
+    --bg-color: #FAF9F6;
+    /* 米白背景，营造留白意境 */
+    --text-color: #333333;
+    /* 深灰文字，增强层次 */
+    --light-gray: #F5F5F5;
+    /* 浅灰色，用于卡片背景 */
+    --medium-gray: #EEEEEE;
+    /* 中灰色，用于分割线 */
+    --white: #FFFFFF;
+    /* 白色，用于重要区块 */
+    --border-radius: 10px;
+    /* 统一圆角半径 */
+
+    /* 状态色（用于判定正确/错误） */
+    --success-color: var(--primary-color);
+    --danger-color: #B23B3B;
+
+    /* 字体系统 */
+    --font-family: "SimSun", "宋体", serif;
+    /* 宋体，传递古典感 */
+    --font-size-title: 24px;
+    /* 标题字号 */
+    --font-size-subtitle: 18px;
+    /* 副标题字号 */
+    --font-size-body: 16px;
+    /* 正文字号 */
+    --font-size-small: 14px;
+    /* 小字号，用于辅助信息 */
 }
 
 /**
@@ -43,188 +59,189 @@
  * 背景使用径向渐变模拟淡墨晕染效果
  */
 body {
-  font-family: var(--font-family);
-  background: var(--bg-color);
-  color: var(--text-color);
-  line-height: 1.6;
-  
-  /* 淡墨晕染纹理背景 - 使用径向渐变模拟水墨效果 */
-  background-image: 
-    radial-gradient(circle at 20% 50%, rgba(46, 70, 59, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(46, 70, 59, 0.02) 0%, transparent 50%);
-  background-attachment: fixed;  /* 固定背景，滚动时不移动 */
+    font-family: var(--font-family);
+    background: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+
+    /* 淡墨晕染纹理背景 - 使用径向渐变模拟水墨效果 */
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(46, 70, 59, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(46, 70, 59, 0.02) 0%, transparent 50%);
+    background-attachment: fixed;
+    /* 固定背景，滚动时不移动 */
 }
 
 /* 导航栏样式 */
 .navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 70px;
-  background: rgba(46, 70, 59, 0.85);
-  backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: rgba(46, 70, 59, 0.85);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-content {
-  display: flex;
-  gap: 32px;
-  align-items: center;
-  justify-content: center;
-  max-width: 1200px;
-  width: 100%;
-  padding: 0 24px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    width: 100%;
+    padding: 0 24px;
 }
 
 .nav-item {
-  color: var(--white);
-  font-size: 16px;
-  font-weight: bold;
-  text-decoration: none;
-  padding: 6px 12px;
-  transition: color 0.2s ease;
-  cursor: pointer;
-  position: relative;
+    color: var(--white);
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 6px 12px;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    position: relative;
 }
 
 .nav-item:hover {
-  color: #f4f4f4;
+    color: #f4f4f4;
 }
 
 .nav-item.active {
-  color: #ffffff;
+    color: #ffffff;
 }
 
 /* 页面容器 */
 .page-container {
-  margin-top: 70px;
-  min-height: calc(100vh - 70px);
-  padding: 32px 24px 40px;
-  width: 92%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+    margin-top: 70px;
+    min-height: calc(100vh - 70px);
+    padding: 32px 24px 40px;
+    width: 92%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* 卡片样式 */
 .card {
-  background: var(--white);
-  border-radius: var(--border-radius);
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 按钮样式 */
 .btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: var(--border-radius);
-  font-family: var(--font-family);
-  font-size: var(--font-size-body);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease,
-    box-shadow 0.2s ease;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-family: var(--font-family);
+    font-size: var(--font-size-body);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease,
+        box-shadow 0.2s ease;
 }
 
 .btn-primary {
-  background: var(--primary-color);
-  color: var(--white);
+    background: var(--primary-color);
+    color: var(--white);
 }
 
 .btn-primary:hover {
-  background: #1e3028;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+    background: #1e3028;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 }
 
 .btn-primary:active {
-  transform: translateY(1px);
-  box-shadow: none;
+    transform: translateY(1px);
+    box-shadow: none;
 }
 
 /* 输入框样式 */
 .input {
-  padding: 12px 16px;
-  border: 2px solid var(--medium-gray);
-  border-radius: var(--border-radius);
-  font-family: var(--font-family);
-  font-size: var(--font-size-body);
-  background: var(--white);
-  transition: all 0.3s ease;
-  width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    font-family: var(--font-family);
+    font-size: var(--font-size-body);
+    background: var(--white);
+    transition: all 0.3s ease;
+    width: 100%;
 }
 
 .input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(46, 70, 59, 0.1);
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 70, 59, 0.1);
 }
 
 /* 标题样式 */
 .title {
-  font-size: var(--font-size-title);
-  font-weight: bold;
-  color: var(--text-color);
-  margin-bottom: 20px;
+    font-size: var(--font-size-title);
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 20px;
 }
 
 .subtitle {
-  font-size: var(--font-size-subtitle);
-  font-weight: bold;
-  color: var(--primary-color);
-  margin-bottom: 15px;
+    font-size: var(--font-size-subtitle);
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 15px;
 }
 
 /* 文本样式 */
 .text-primary {
-  color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .text-gray {
-  color: #666;
+    color: #666;
 }
 
 /* 动画 */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s ease;
 }
 
 /* 滚动条样式 */
 ::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--light-gray);
+    background: var(--light-gray);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-color);
-  border-radius: 4px;
+    background: var(--primary-color);
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #1e3028;
+    background: #1e3028;
 }
-
